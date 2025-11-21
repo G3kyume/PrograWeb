@@ -1,0 +1,10 @@
+mx\tecnm\toluca\carnicos\resources\JakartaEE10Resource.class
+com\carnicos\test\ProbarConexionYConsulta.class
+com\carnicos\controlador\ListarCarnesServlet.class
+mx\tecnm\toluca\carnicos\JakartaRestConfiguration.class
+com\carnicos\controlador\ProductoServlet.class
+com\carnicos\controlador\CarneBean.class
+com\carnicos\model\Categoria.class
+com\carnicos\model\Carne.class
+com\carnicos\conexion\ConexionPostgres.class
+com\carnicos\model\CarneDAO.class

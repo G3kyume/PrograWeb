@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Proveedor de Cárnicos</title>
+    <link rel="icon" type="image/png" href="Imagenes/iconoCabecera.jpg">
+    <link rel="stylesheet" href="indexEstilos.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <header>
+        <nav>
+            <a class="anim" href="index.html">
+                <img id="logotipo" src="Imagenes/Logotipo.png" alt="Logotipo">
+            </a>
+            <div class="contenedor-busqueda">
+                <input type="text" id="txtBusqueda" placeholder="Buscar productos..." />
+                <img src="Imagenes/iconoBuscar.png" class="icono-busqueda">
+            </div>
+        </nav>
+    </header>
+
+    <div id="filtros">
+        <button onclick="filtrarProductos('Todos')" class="carne">Todos</button>
+        <button onclick="filtrarProductos('Res')" class="carne">Res</button>
+        <button onclick="filtrarProductos('Pollo')" class="carne">Pollo</button>
+        <button onclick="filtrarProductos('Cerdo')" class="carne">Cerdo</button>
+    </div>
+
+    <div id="listado">
+        <div class="lista" id="listaCarnes">
+            </div>
+    </div>
+
+    <script>
+        let todosLosProductos = []; // Guardaremos los datos aquí para poder filtrar sin recargar
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await cargarProductos();
+        });
+
+        async function cargarProductos() {
+            const contenedor = document.getElementById("listaCarnes");
+            try {
+                // Llama al Servlet que creamos arriba
+                const respuesta = await fetch("listarCarnes");
+                
+                if (!respuesta.ok) throw new Error("Error en la red");
+                
+                const carnes = await respuesta.json();
+                todosLosProductos = carnes; // Guardar en memoria
+                console.log("✅ Datos recibidos:", carnes);
+                
+                renderizarProductos(carnes);
+
+            } catch (error) {
+                console.error("❌ Error:", error);
+                contenedor.innerHTML = "<p>Error cargando los productos. Verifique que Payara esté corriendo.</p>";
+            }
+        }
+
+        function renderizarProductos(lista) {
+            const contenedor = document.getElementById("listaCarnes");
+            contenedor.innerHTML = ""; // Limpiar lista anterior
+
+            lista.forEach(c => {
+                const item = document.createElement("div");
+                item.classList.add("item");
+
+                // 1. PREPARACIÓN DE VARIABLES (Validaciones)
+
+                // Validar imagen (c.imagenUrl viene de getImagenUrl en Java)
+                const imagenFinal = c.imagenUrl ? c.imagenUrl : 'imgProductos/default.jpg';
+
+                // Calcular entrega (c.diasEntregaMin viene de getDiasEntregaMin en Java)
+                const textoEntrega = (c.diasEntregaMin && c.diasEntregaMax) 
+                                     ? `${c.diasEntregaMin}-${c.diasEntregaMax} días` 
+                                     : '3-5 días';
+
+                // Validar Categoría (para evitar error si es nula)
+                const nombreCategoria = c.categoria ? c.categoria.nombre : 'General';
+
+                // 2. TEMPLATE HTML (Aquí aplicamos los estilos)
+                item.innerHTML = `
+                    <div class="item-top">
+                        <span class="etiqueta disponible">${c.stockActual} DISPONIBLES</span>
+                        <img src="${imagenFinal}" alt="${c.nombre}">
+                        <div class="degradado"></div>
+                        <div class="precio">$${c.precio}</div>
+                    </div>
+
+                    <div class="item-info">
+                        <h3>${c.nombre}</h3>
+                        <p>${c.descripcion ? c.descripcion : ''}</p>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <small style="color:#666;">Ref: ${c.codigoSku || 'N/A'}</small>
+                            <small style="color:#d32f2f; font-weight:bold;">${nombreCategoria}</small>
+                        </div>
+
+                        <span class="entrega">Entrega: ${textoEntrega}</span>
+
+                        <button class="btn-agregar" onclick="alert('Agregaste: ${c.nombre}')">+</button>
+                    </div>
+                `;
+
+                contenedor.appendChild(item);
+            });
+        }
+
+        // Función extra para que funcionen los botones de arriba
+        function filtrarProductos(categoria) {
+            if (categoria === 'Todos') {
+                renderizarProductos(todosLosProductos);
+            } else {
+                const filtrados = todosLosProductos.filter(p => 
+                    p.categoria && p.categoria.nombre === categoria
+                );
+                renderizarProductos(filtrados);
+            }
+        }
+    </script>
+</body>
+</html>

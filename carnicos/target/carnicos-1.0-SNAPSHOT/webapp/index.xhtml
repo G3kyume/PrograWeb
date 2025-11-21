@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html">
+    <h:head>
+        <title>Proveedor de Cárnicos</title>
+        <link rel="icon" type="image/png" href="Imagenes/iconoCabecera.jpg" />
+        <link rel="stylesheet" href="indexEstilos.css" />
+        <meta charset="UTF-8" />
+        <meta name="author" content="Alumnos de ITTOL" />
+        <meta name="description" content="Módulo de proveedor de cárnicos" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="keywords" content="cárnicos, proveedor, alimentos" />
+
+        <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", async () => {
+          const contenedor = document.querySelector(".lista");
+
+          try {
+            const respuesta = await fetch("listarCarnes");
+            if (!respuesta.ok) {
+              throw new Error("Error al obtener las carnes");
+            }
+
+            const carnes = await respuesta.json();
+
+            carnes.forEach(c => {
+              const item = document.createElement("div");
+              item.classList.add("item");
+              item.innerHTML = `
+                <div class="item-top">
+                  <span class="etiqueta disponible">${c.unidades_disponibles} UNIDADES DISPONIBLES</span>
+                  <img src="${c.imagen_url}" alt="${c.nombre}">
+                  <div class="degradado"></div>
+                  <div class="precio">$${c.precio}</div>
+                </div>
+
+                <div class="item-info">
+                  <h3>${c.nombre}</h3>
+                  <p>${c.descripcion}</p>
+                  <span class="entrega">Entrega: ${c.dias_entrega}</span>
+                  <button class="btn-agregar">+</button>
+                </div>
+              `;
+              contenedor.appendChild(item);
+            });
+          } catch (error) {
+            console.error("No se pudieron cargar las carnes:", error);
+          }
+        });
+        </script>
+    </h:head>
+
+    <h:body>
+        <header>
+            <nav>
+                <a class="anim" href="index.xhtml"><img id="logotipo" src="Imagenes/Logotipo.png" alt="Logotipo de la marca" /></a>  
+                <a class="anim"><img src="Imagenes/iconoUsuario.png" /></a>
+                <a class="anim"><img src="Imagenes/iconoNotificaciones.png" /></a>
+                <a class="anim"><img src="Imagenes/iconoPedidos.png" /></a>
+                <div class="contenedor-busqueda">
+                    <input type="text" placeholder="Buscar productos..." />
+                    <img src="Imagenes/iconoBuscar.png" alt="Icono buscador" class="icono-busqueda" />
+                </div>
+                <a class="anim"><img src="Imagenes/iconoCarrito.png" /></a>
+            </nav>
+        </header>
+
+        <div id="contenedor-carnes">
+            <button class="carne">POLLO</button>
+            <button class="carne">RES</button>
+            <button class="carne">CERDO</button>
+            <button class="carne">PESCADO</button>
+            <button class="carne">EXÓTICOS</button>
+        </div>
+
+        <div id="listado">
+            <div class="lista">
+                <!-- Aquí se insertarán dinámicamente los productos -->
+            </div>
+        </div>
+    </h:body>
+</html>
+
