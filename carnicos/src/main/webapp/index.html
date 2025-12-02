@@ -6,10 +6,41 @@
     <link rel="icon" type="image/png" href="Imagenes/iconoCabecera.jpg">
     <link rel="stylesheet" href="indexEstilos.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <style>
+        .grid-crud {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .btn-crud {
+            padding: 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .btn-crud:hover { transform: scale(1.05); }
+        .btn-crear { background-color: #4CAF50; color: white; }
+        .btn-leer { background-color: #2196F3; color: white; }
+        .btn-editar { background-color: #FF9800; color: white; }
+        .btn-borrar { background-color: #f44336; color: white; }
+        .btn-volver { 
+            background: none; border: none; color: #666; 
+            cursor: pointer; font-size: 14px; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 5px;
+        }
+    </style>
 </head>
 <body>
     <header>
         <nav>
+            <button onclick="abrirModal()" class="btn-admin">
+                ⚙️
+            </button>
             <a class="anim" href="index.html">
                 <img id="logotipo" src="Imagenes/Logotipo.png" alt="Logotipo">
             </a>
@@ -29,11 +60,107 @@
 
     <div id="listado">
         <div class="lista" id="listaCarnes">
+        </div>
+    </div>
+
+    <div id="modalProducto" class="modal-overlay">
+        <div class="modal-content">
+            <span class="cerrar-modal" onclick="cerrarModal()">&times;</span>
+
+            <div id="vistaMenu">
+                <h2>Administración de Inventario</h2>
+                <p style="text-align: center; color: #666;">Seleccione una acción:</p>
+                
+                <div class="grid-crud">
+                    <button class="btn-crud btn-crear" onclick="mostrarFormulario()">
+                        ➕ Nuevo Producto
+                    </button>
+
+                    <button class="btn-crud btn-leer" onclick="alert('Aquí iría la lista completa o búsqueda avanzada')">
+                        📋 Consultar Todo
+                    </button>
+                    <button class="btn-crud btn-editar" onclick="alert('Aquí seleccionarías un producto para editar')">
+                        ✏️ Editar Datos
+                    </button>
+                    <button class="btn-crud btn-borrar" onclick="alert('Aquí seleccionarías un producto para eliminar')">
+                        🗑️ Eliminar
+                    </button>
+                </div>
+            </div>
+
+            <div id="vistaFormulario" style="display: none;">
+                <button type="button" class="btn-volver" onclick="volverAlMenu()">
+                    ⬅ Volver al menú
+                </button>
+
+                <h2>Nuevo Producto Cárnico</h2>
+
+                <form id="formNuevoProducto" onsubmit="guardarProducto(event)">
+                    <div class="form-grid">
+                        <div class="campo">
+                            <label>Nombre del Producto:</label>
+                            <input type="text" name="nombre" required placeholder="Ej. Costilla Cargada">
+                        </div>
+
+                        <div class="campo">
+                            <label>Código SKU:</label>
+                            <input type="text" name="sku" required placeholder="Ej. RES-005">
+                        </div>
+
+                        <div class="campo">
+                            <label>Categoría:</label>
+                            <select name="categoriaId" required>
+                                <option value="1">Res</option>
+                                <option value="2">Pollo</option>
+                                <option value="3">Pescado</option>
+                                <option value="4">Cerdo</option>
+                                <option value="5">Exótico</option>
+                            </select>
+                        </div>
+
+                        <div class="campo">
+                            <label>Precio ($):</label>
+                            <input type="number" name="precio" step="0.01" min="0" required placeholder="0.00">
+                        </div>
+
+                        <div class="campo">
+                            <label>Stock Inicial:</label>
+                            <input type="number" name="stock" min="0" required placeholder="0">
+                        </div>
+
+                        <div class="campo-doble">
+                            <div>
+                                <label>Días Min:</label>
+                                <input type="number" name="diasMin" min="1" value="3">
+                            </div>
+                            <div>
+                                <label>Días Max:</label>
+                                <input type="number" name="diasMax" min="1" value="5">
+                            </div>
+                        </div>
+
+                        <div class="campo-full">
+                            <label>URL de Imagen:</label>
+                            <input type="text" name="imagenUrl" placeholder="imgProductos/ejemplo.jpg">
+                        </div>
+
+                        <div class="campo-full">
+                            <label>Descripción:</label>
+                            <textarea name="descripcion" rows="3" placeholder="Detalles del corte..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" onclick="cerrarModal()" class="btn-cancelar">Cancelar</button>
+                        <button type="submit" class="btn-guardar">Guardar Producto</button>
+                    </div>
+                </form>
+            </div>
             </div>
     </div>
 
     <script>
-        let todosLosProductos = []; // Guardaremos los datos aquí para poder filtrar sin recargar
+        let todosLosProductos = []; 
 
         document.addEventListener("DOMContentLoaded", async () => {
             await cargarProductos();
@@ -42,45 +169,31 @@
         async function cargarProductos() {
             const contenedor = document.getElementById("listaCarnes");
             try {
-                // Llama al Servlet que creamos arriba
                 const respuesta = await fetch("listarCarnes");
-                
                 if (!respuesta.ok) throw new Error("Error en la red");
-                
                 const carnes = await respuesta.json();
-                todosLosProductos = carnes; // Guardar en memoria
+                todosLosProductos = carnes; 
                 console.log("✅ Datos recibidos:", carnes);
-                
                 renderizarProductos(carnes);
-
             } catch (error) {
                 console.error("❌ Error:", error);
-                contenedor.innerHTML = "<p>Error cargando los productos. Verifique que Payara esté corriendo.</p>";
+                contenedor.innerHTML = "<p>Error cargando los productos.</p>";
             }
         }
 
         function renderizarProductos(lista) {
             const contenedor = document.getElementById("listaCarnes");
-            contenedor.innerHTML = ""; // Limpiar lista anterior
+            contenedor.innerHTML = ""; 
 
             lista.forEach(c => {
                 const item = document.createElement("div");
                 item.classList.add("item");
-
-                // 1. PREPARACIÓN DE VARIABLES (Validaciones)
-
-                // Validar imagen (c.imagenUrl viene de getImagenUrl en Java)
                 const imagenFinal = c.imagenUrl ? c.imagenUrl : 'imgProductos/default.jpg';
-
-                // Calcular entrega (c.diasEntregaMin viene de getDiasEntregaMin en Java)
                 const textoEntrega = (c.diasEntregaMin && c.diasEntregaMax) 
                                      ? `${c.diasEntregaMin}-${c.diasEntregaMax} días` 
                                      : '3-5 días';
-
-                // Validar Categoría (para evitar error si es nula)
                 const nombreCategoria = c.categoria ? c.categoria.nombre : 'General';
 
-                // 2. TEMPLATE HTML (Aquí aplicamos los estilos)
                 item.innerHTML = `
                     <div class="item-top">
                         <span class="etiqueta disponible">${c.stockActual} DISPONIBLES</span>
@@ -88,27 +201,21 @@
                         <div class="degradado"></div>
                         <div class="precio">$${c.precio}</div>
                     </div>
-
                     <div class="item-info">
                         <h3>${c.nombre}</h3>
                         <p>${c.descripcion ? c.descripcion : ''}</p>
-
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                             <small style="color:#666;">Ref: ${c.codigoSku || 'N/A'}</small>
                             <small style="color:#d32f2f; font-weight:bold;">${nombreCategoria}</small>
                         </div>
-
                         <span class="entrega">Entrega: ${textoEntrega}</span>
-
                         <button class="btn-agregar" onclick="alert('Agregaste: ${c.nombre}')">+</button>
                     </div>
                 `;
-
                 contenedor.appendChild(item);
             });
         }
 
-        // Función extra para que funcionen los botones de arriba
         function filtrarProductos(categoria) {
             if (categoria === 'Todos') {
                 renderizarProductos(todosLosProductos);
@@ -118,6 +225,46 @@
                 );
                 renderizarProductos(filtrados);
             }
+        }
+        
+        // --- LOGICA MODIFICADA PARA EL MODAL ---
+
+        // Abrir Modal: Siempre muestra primero el MENU y oculta el FORMULARIO
+        function abrirModal() {
+            document.getElementById("vistaMenu").style.display = "block";
+            document.getElementById("vistaFormulario").style.display = "none";
+            document.getElementById("modalProducto").style.display = "flex";
+        }
+
+        function cerrarModal() {
+            document.getElementById("modalProducto").style.display = "none";
+        }
+
+        // Cambiar a la vista del Formulario
+        function mostrarFormulario() {
+            document.getElementById("vistaMenu").style.display = "none";
+            document.getElementById("vistaFormulario").style.display = "block";
+        }
+
+        // Regresar al Menu principal
+        function volverAlMenu() {
+            document.getElementById("vistaFormulario").style.display = "none";
+            document.getElementById("vistaMenu").style.display = "block";
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById("modalProducto");
+            if (event.target == modal) {
+                cerrarModal();
+            }
+        }
+
+        function guardarProducto(event) {
+            event.preventDefault(); 
+            console.log("Intentando guardar producto...");
+            alert("¡Formulario listo! Falta conectar con el Servlet.");
+            // Opcional: Cerrar modal después de guardar
+            // cerrarModal();
         }
     </script>
 </body>

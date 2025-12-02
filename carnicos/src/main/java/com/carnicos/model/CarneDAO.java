@@ -67,6 +67,48 @@ public class CarneDAO {
         String sql = SELECT_BASE + "WHERE c.nombre = ? ORDER BY p.id ASC;";
         return ejecutarConsulta(sql, nombreCategoria);
     }
+    
+    
+    // --------------------------------------------------------------------------
+    // 4. Método para INSERTAR un producto nuevo
+    // --------------------------------------------------------------------------
+    public boolean insertarCarne(Carne c) {
+        String sql = "INSERT INTO productos_carnicos " +
+                     "(nombre, descripcion, precio, stock_actual, imagen_url, " +
+                     " dias_entrega_min, dias_entrega_max, codigo_sku, categoria_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = ConexionPostgres.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, c.getNombre());
+            ps.setString(2, c.getDescripcion());
+            ps.setBigDecimal(3, c.getPrecio());
+            ps.setInt(4, c.getStockActual());
+            ps.setString(5, c.getImagenUrl());
+            ps.setInt(6, c.getDiasEntregaMin());
+            ps.setInt(7, c.getDiasEntregaMax());
+            ps.setString(8, c.getCodigoSku());
+            // Asumimos que el objeto Carne ya trae el objeto Categoria con su ID
+            ps.setInt(9, c.getCategoria().getId());
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            System.err.println("❌ Error al insertar: " + e.getMessage());
+
+            // MANEJO DE VALIDACIONES DE LA BASE DE DATOS
+            if (e.getSQLState().equals("23505")) { // Código 23505 = Dato duplicado (Unique Constraint)
+                System.err.println("⚠️ Error: Ya existe un producto con ese Nombre o SKU.");
+            } else if (e.getSQLState().equals("23514")) { // Código 23514 = Check Violation
+                System.err.println("⚠️ Error: Precio negativo o fechas inválidas.");
+            }
+
+            return false;
+        }
+    }
+    
 
     // --------------------------------------------------------------------------
     // 3. Método general de ejecución
