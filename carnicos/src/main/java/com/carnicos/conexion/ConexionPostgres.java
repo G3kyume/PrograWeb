@@ -2,30 +2,38 @@
 package com.carnicos.conexion;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 
 public class ConexionPostgres {
-    private static final String URL = "jdbc:postgresql://localhost:5432/carnicos";
-    private static final String USER = "postgres";
-    private static final String PASSWORD = "ADMIN123";
-    private static Connection conexion = null;
 
+    // Este nombre debe ser IDÉNTICO al que pusiste en el PASO 3
+    private static final String JNDI_NAME = "jdbc/carnicos";
+    
     public static Connection getConexion() {
+        Connection conexion = null;
         try {
-            if (conexion == null || conexion.isClosed()) {
-                Class.forName("org.postgresql.Driver");
-                conexion = DriverManager.getConnection(URL, USER, PASSWORD);
-                System.out.println("✅ Conexión exitosa a PostgreSQL");
-            }
-        } catch (ClassNotFoundException | SQLException e) {
-            System.out.println("❌ Error al conectar: " + e.getMessage());
+            // 1. Conectamos con el directorio del servidor (JNDI)
+            Context ctx = new InitialContext();
+            
+            // 2. Buscamos el DataSource por su nombre
+            DataSource ds = (DataSource) ctx.lookup(JNDI_NAME);
+            
+            // 3. Le pedimos una conexión al pool
+            conexion = ds.getConnection();
+            
+            System.out.println("✅ Conexión obtenida desde Payara (Pool)");
+            
+        } catch (NamingException e) {
+            System.err.println("❌ Error JNDI: No encuentro 'jdbc/carnicos'. Verifique Payara > Resources > JDBC Resources.");
+            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("❌ Error SQL: " + e.getMessage());
+            e.printStackTrace();
         }
         return conexion;
     }
-    
-    public static void main(String[] args) {
-    getConexion();
-}
-
 }
