@@ -140,8 +140,16 @@
                         </div>
 
                         <div class="campo-full">
-                            <label>URL de Imagen:</label>
-                            <input type="text" name="imagenUrl" placeholder="imgProductos/ejemplo.jpg">
+                            <label>Seleccionar Imagen:</label>
+                            <select name="imagenUrl" required>
+                                <option value="" disabled selected>-- Selecciona una opción --</option>
+
+                                <option value="imgProductos/imgRes.jpg">Res</option>
+                                <option value="imgProductos/imgCerdo.jpg">Cerdo</option>
+                                <option value="imgProductos/imgPolleria.jpg">Pollo</option>
+                                <option value="imgProductos/imgPescaderia.jpg">Pescado</option>
+                                <option value="imgProductos/imgExotico.jpg">Exótico</option>
+                            </select>
                         </div>
 
                         <div class="campo-full">
@@ -260,11 +268,43 @@
         }
 
         function guardarProducto(event) {
-            event.preventDefault(); 
-            console.log("Intentando guardar producto...");
-            alert("¡Formulario listo! Falta conectar con el Servlet.");
-            // Opcional: Cerrar modal después de guardar
-            // cerrarModal();
+            event.preventDefault(); // Evita que la página se recargue
+            console.log("Iniciando envío de datos...");
+
+            // 1. Capturar el formulario
+            // 'event.target' es el formulario mismo si llamaste la función desde onsubmit
+            const formulario = event.target; 
+
+            // 2. Extraer los datos automáticamente
+            // FormData busca todos los inputs que tengan el atributo 'name'
+            const datos = new FormData(formulario);
+
+            // 3. Enviar los datos al Servlet
+            // IMPORTANTE: Cambia 'SvProducto' por la URL exacta de tu Servlet (la que pusiste en @WebServlet)
+            fetch('SvProducto', { 
+                method: 'POST',
+                // Usamos URLSearchParams para que Java lo lea fácil con request.getParameter()
+                body: new URLSearchParams(datos) 
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Si el servidor responde con código 200 (OK)
+                    alert("¡Producto guardado exitosamente!");
+                    formulario.reset(); // Limpia los campos
+
+                    // Si tienes una función para cerrar el modal, úsala aquí:
+                    // cerrarModal(); 
+
+                    // Si tienes una función para actualizar la tabla de productos sin recargar:
+                    // actualizarTabla();
+                } else {
+                    alert("Hubo un error al guardar el producto.");
+                }
+            })
+            .catch(error => {
+                console.error("Error de conexión:", error);
+                alert("No se pudo conectar con el servidor.");
+            });
         }
     </script>
 </body>

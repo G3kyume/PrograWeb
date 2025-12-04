@@ -74,8 +74,7 @@ public class CarneDAO {
     // --------------------------------------------------------------------------
     public boolean insertarCarne(Carne c) {
         String sql = "INSERT INTO productos_carnicos " +
-                     "(nombre, descripcion, precio, stock_actual, imagen_url, " +
-                     " dias_entrega_min, dias_entrega_max, codigo_sku, categoria_id) " +
+                     "(nombre, descripcion, precio, stock_actual, imagen_url, dias_entrega_min, dias_entrega_max, categoria_id, codigo_sku) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = ConexionPostgres.getConexion();
@@ -88,9 +87,8 @@ public class CarneDAO {
             ps.setString(5, c.getImagenUrl());
             ps.setInt(6, c.getDiasEntregaMin());
             ps.setInt(7, c.getDiasEntregaMax());
-            ps.setString(8, c.getCodigoSku());
-            // Asumimos que el objeto Carne ya trae el objeto Categoria con su ID
-            ps.setInt(9, c.getCategoria().getId());
+            ps.setInt(8, c.getCategoria().getId());
+            ps.setString(9, c.getCodigoSku());
 
             int filasAfectadas = ps.executeUpdate();
             return filasAfectadas > 0;

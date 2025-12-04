@@ -7,4 +7,5 @@ com\carnicos\controlador\CarneBean.class
 com\carnicos\model\Categoria.class
 com\carnicos\model\Carne.class
 com\carnicos\conexion\ConexionPostgres.class
+com\carnicos\controlador\SvProducto.class
 com\carnicos\model\CarneDAO.class
