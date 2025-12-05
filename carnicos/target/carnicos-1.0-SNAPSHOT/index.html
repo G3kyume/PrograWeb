@@ -100,16 +100,12 @@
                         <button class="btn-crud btn-crear" onclick="mostrarFormulario()">
                             ➕ Nuevo Producto
                         </button>
-
-                        <button class="btn-crud btn-leer" onclick="alert('Aquí iría la lista completa o búsqueda avanzada')">
-                            📋 Consultar Todo
-                        </button>
                         <button class="btn-crud btn-editar" onclick="alert('Aquí seleccionarías un producto para editar')">
                             ✏️ Editar Datos
                         </button>
-                        <button class="btn-crud btn-borrar" onclick="alert('Aquí seleccionarías un producto para eliminar')">
-                            🗑️ Eliminar
-                        </button>
+                        <button class="btn-crud btn-borrar" onclick="activarModoBorrar()">
+                        🗑️ Eliminar
+                    </button>
                     </div>
                 </div>
 
@@ -233,10 +229,12 @@
                 lista.forEach(c => {
                     const item = document.createElement("div");
                     item.classList.add("item");
+                    item.style.position = "relative";
                     item.style.cursor = 'pointer'; //--- Indicar que es clickeable
                     item.addEventListener('click', () => {
                         // Evita que se active si se hizo clic en el botón '+'
-                        if (event.target.classList.contains('btn-agregar')) return;
+                        if (event.target.classList.contains('btn-agregar') || 
+                        event.target.classList.contains('btn-eliminar-card')) return;
                         mostrarDetalle(c);
                     });
                     const imagenFinal = c.imagenUrl ? c.imagenUrl : 'imgProductos/default.jpg';
@@ -246,6 +244,8 @@
                     const nombreCategoria = c.categoria ? c.categoria.nombre : 'General';
 
                     item.innerHTML = `
+                        <button class="btn-eliminar-card" onclick="confirmarEliminar(${c.id}, '${c.nombre}')">X</button>
+            
                         <div class="item-top">
                             <span class="etiqueta disponible">${c.stockActual} DISPONIBLES</span>
                             <img src="${imagenFinal}" alt="${c.nombre}">
@@ -395,6 +395,59 @@
                 );
 
                 renderizarProductos(filtrados);
+            }
+
+            // --- FUNCIONES PARA ELIMINAR ---
+
+            function activarModoBorrar() {
+                cerrarModal(); // Cerramos el menú
+                const contenedor = document.getElementById("listaCarnes");
+
+                // Si ya está activo, lo desactivamos
+                if (contenedor.classList.contains("modo-borrar")) {
+                    contenedor.classList.remove("modo-borrar");
+                    alert("Modo eliminar DESACTIVADO");
+                } else {
+                    // Si no, lo activamos
+                    contenedor.classList.add("modo-borrar");
+                    alert("MODO ELIMINAR ACTIVO: Toca la 'X' roja de un producto para borrarlo.");
+                }
+            }
+
+            async function confirmarEliminar(id, nombre) {
+                // Evitamos que el clic se propague y abra el modal de detalle
+                event.stopPropagation();
+
+                if (!confirm(`¿Estás seguro de que deseas ELIMINAR "${nombre}"?\nEsta acción no se puede deshacer.`)) {
+                    return;
+                }
+
+                const datos = new URLSearchParams();
+                datos.append("id", id);
+
+                try {
+                    // Asegúrate que tu Servlet se llame 'eliminarProducto' o cambia este nombre
+                    const resp = await fetch("eliminarProducto", { 
+                        method: "POST",
+                        body: datos
+                    });
+
+                    // Verifica si la respuesta es JSON válida
+                    const json = await resp.json();
+
+                    if (json.status === "ok") {
+                        alert("✅ Producto eliminado correctamente");
+                        // Quitamos el modo borrar para que la lista se vea normal de nuevo
+                        document.getElementById("listaCarnes").classList.remove("modo-borrar");
+                        cargarProductos(); // Recargamos la lista
+                    } else {
+                        alert("❌ Error: " + json.message);
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    alert("Error al conectar con el servidor para eliminar.");
+                }
             }
 
         </script>

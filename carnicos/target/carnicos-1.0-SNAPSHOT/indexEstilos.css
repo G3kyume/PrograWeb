@@ -458,3 +458,44 @@ input, select, textarea {
     margin-top: 20px;
     padding-top: 15px;
 }
+/* --- ESTILOS PARA EL MODO BORRAR --- */
+
+/* El botón rojo flotante (oculto por defecto) */
+.btn-eliminar-card {
+    display: none; 
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: #ff4444;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 100; /* Para que esté encima de todo */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+/* Cuando la lista tiene la clase 'modo-borrar', mostramos los botones */
+.modo-borrar .btn-eliminar-card {
+    display: block;
+    animation: aparecer 0.3s ease-out;
+}
+
+/* Efecto visual opcional: Las tarjetas tiemblan un poco */
+.modo-borrar .item {
+    border: 2px dashed #ff4444;
+    animation: vibrar 0.3s infinite;
+}
+
+@keyframes vibrar {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(1deg); }
+    75% { transform: rotate(-1deg); }
+}
+@keyframes aparecer {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+}
