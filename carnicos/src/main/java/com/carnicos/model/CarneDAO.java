@@ -73,10 +73,29 @@ public class CarneDAO {
     // --------------------------------------------------------------------------
     public List<Carne> buscarPorNombre(String nombre) {
         String sql = SELECT_BASE
-                + "WHERE LOWER(p.nombre) LIKE LOWER(?) "
+                + "WHERE LOWER(p.nombre) LIKE LOWER(?) OR LOWER(p.codigo_sku) LIKE LOWER(?) "
                 + "ORDER BY p.id ASC;";
 
-        return ejecutarConsulta(sql, "%" + nombre + "%");
+        List<Carne> lista = new ArrayList<>();
+        String parametroBusqueda = "%" + nombre + "%";
+
+        try (Connection conn = ConexionPostgres.getConexion(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, parametroBusqueda); // Para buscar en el nombre
+            ps.setString(2, parametroBusqueda); // Para buscar en el SKU
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapearCarne(rs));
+                }
+            }
+            System.out.println("✅ [CarneDAO] Consulta filtrada exitosa. Registros: " + lista.size());
+        } catch (SQLException e) {
+            System.err.println("❌ [CarneDAO] Error SQL en buscarPorNombre: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return lista;
     }
 
     // Método compatibilidad: listar() llama a obtenerCarnes()
@@ -148,5 +167,125 @@ public class CarneDAO {
         }
 
         return lista;
+    }
+    
+    // 5. Método para OBTENER un producto por ID (Necesario para la Edición)
+    public Carne obtenerCarnePorId(int id) {
+        String sql = SELECT_BASE + "WHERE p.id = ?;";
+
+        try (Connection conn = ConexionPostgres.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapearCarne(rs);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ [CarneDAO] Error al buscar por ID: " + e.getMessage());
+        }
+        return null;
+    }
+    
+    // 6. Método para MODIFICAR un producto existente (Función UPDATE)
+    public boolean modificarCarne(Carne c) {
+        // IMPORTANTE: Asegúrate de que los nombres de columna coincidan con tu base de datos
+        String sql = "UPDATE productos_carnicos SET "
+                + "nombre = ?, "
+                + "descripcion = ?, "
+                + "precio = ?, "
+                + "stock_actual = ?, "
+                + "imagen_url = ?, "
+                + "dias_entrega_min = ?, "
+                + "dias_entrega_max = ?, "
+                + "categoria_id = ?, "
+                + "codigo_sku = ? "
+                + "WHERE id = ?";
+
+        try (Connection conn = ConexionPostgres.getConexion(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, c.getNombre());
+            ps.setString(2, c.getDescripcion());
+            ps.setBigDecimal(3, c.getPrecio());
+            ps.setInt(4, c.getStockActual());
+            ps.setString(5, c.getImagenUrl());
+            ps.setInt(6, c.getDiasEntregaMin());
+            ps.setInt(7, c.getDiasEntregaMax());
+            ps.setInt(8, c.getCategoria().getId());
+            ps.setString(9, c.getCodigoSku());
+            ps.setInt(10, c.getId()); 
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            System.err.println("❌ Error al modificar: " + e.getMessage());
+            // Manejo de validaciones (opcional)
+            if (e.getSQLState().equals("23505")) { 
+                 System.err.println("⚠️ Error: Ya existe otro producto con ese Nombre o SKU.");
+            }
+            return false;
+        }
+    }
+    // Actualizacion
+    public boolean actualizarCarne(Carne c) {
+        // Tu sentencia SQL ya estaba correcta.
+        String sql = "UPDATE productos_carnicos SET "
+                + "nombre = ?, "
+                + "descripcion = ?, "
+                + "precio = ?, "
+                + "stock_actual = ?, "
+                + "imagen_url = ?, "
+                + "dias_entrega_min = ?, "
+                + "dias_entrega_max = ?, "
+                + "categoria_id = ?, "
+                + "codigo_sku = ? "
+                + "WHERE id = ?";
+
+        try (Connection conn = ConexionPostgres.getConexion(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, c.getNombre());
+            ps.setString(2, c.getDescripcion());
+            ps.setBigDecimal(3, c.getPrecio());
+            ps.setInt(4, c.getStockActual());
+            ps.setString(5, c.getImagenUrl());
+            ps.setInt(6, c.getDiasEntregaMin());
+            ps.setInt(7, c.getDiasEntregaMax());
+            ps.setInt(8, c.getCategoria().getId());
+            ps.setString(9, c.getCodigoSku());
+            ps.setInt(10, c.getId()); // ID en la cláusula WHERE
+
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+
+        } catch (SQLException e) {
+            System.err.println("❌ Error al actualizar: " + e.getMessage());
+            // Manejo de validaciones (opcional)
+            return false;
+        }
+    }
+    // Eliminar
+    public boolean eliminarCarne(int id) {
+        String sql = "DELETE FROM productos_carnicos WHERE id = ?";
+        
+        try (Connection conn = ConexionPostgres.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, id);
+            int filasAfectadas = ps.executeUpdate();
+            return filasAfectadas > 0;
+            
+        } catch (SQLException e) {
+            // Manejo de Foreign Key Constraint (Si no se puede eliminar porque hay pedidos asociados)
+            if (e.getSQLState().equals("23503")) { 
+                System.err.println("⚠️ Error: No se puede eliminar el producto porque está asociado a otros registros (ej. pedidos).");
+            } else {
+                System.err.println("❌ Error al eliminar: " + e.getMessage());
+            }
+            return false;
+        }
     }
 }

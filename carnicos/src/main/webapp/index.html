@@ -110,83 +110,103 @@
                 </div>
 
                 <div id="vistaFormulario" style="display: none;">
-                    <button type="button" class="btn-volver" onclick="volverAlMenu()">
-                        ⬅ Volver al menú
+                    <button type="button" class="btn-volver" onclick="volverAlMenuPrincipal()">
+                        ⬅ Volver al menú principal
                     </button>
 
-                    <h2>Nuevo Producto Cárnico</h2>
+                    <h2>Administración de Inventario</h2>
 
-                    <form id="formNuevoProducto" onsubmit="guardarProducto(event)">
-                        <div class="form-grid">
-                            <div class="campo">
-                                <label>Nombre del Producto:</label>
-                                <input type="text" name="nombre" required placeholder="Ej. Costilla Cargada">
-                            </div>
-
-                            <div class="campo">
-                                <label>Código SKU:</label>
-                                <input type="text" name="sku" required placeholder="Ej. RES-005">
-                            </div>
-
-                            <div class="campo">
-                                <label>Categoría:</label>
-                                <select name="categoriaId" required>
-                                    <option value="1">Res</option>
-                                    <option value="2">Pollo</option>
-                                    <option value="3">Pescado</option>
-                                    <option value="4">Cerdo</option>
-                                    <option value="5">Exótico</option>
-                                </select>
-                            </div>
-
-                            <div class="campo">
-                                <label>Precio ($):</label>
-                                <input type="number" name="precio" step="0.01" min="0" required placeholder="0.00">
-                            </div>
-
-                            <div class="campo">
-                                <label>Stock Inicial:</label>
-                                <input type="number" name="stock" min="0" required placeholder="0">
-                            </div>
-
-                            <div class="campo-doble">
-                                <div>
-                                    <label>Días Min:</label>
-                                    <input type="number" name="diasMin" min="1" value="3">
-                                </div>
-                                <div>
-                                    <label>Días Max:</label>
-                                    <input type="number" name="diasMax" min="1" value="5">
-                                </div>
-                            </div>
-
-                            <div class="campo-full">
-                                <label>Seleccionar Imagen:</label>
-                                <select name="imagenUrl" required>
-                                    <option value="" disabled selected>-- Selecciona una opción --</option>
-
-                                    <option value="imgProductos/imgRes.jpg">Res</option>
-                                    <option value="imgProductos/imgCerdo.jpg">Cerdo</option>
-                                    <option value="imgProductos/imgPolleria.jpg">Pollo</option>
-                                    <option value="imgProductos/imgPescaderia.jpg">Pescado</option>
-                                    <option value="imgProductos/imgExotico.jpg">Exótico</option>
-                                </select>
-                            </div>
-
-                            <div class="campo-full">
-                                <label>Descripción:</label>
-                                <textarea name="descripcion" rows="3" placeholder="Detalles del corte..."></textarea>
-                            </div>
+                    <div id="seccionSeleccion" style="display: none;">
+                        <h3>1. Seleccionar Producto a Editar (por SKU)</h3>
+                        <div class="campo" style="display: flex; gap: 10px; align-items: center;">
+                            <label for="skuBusqueda">Buscar SKU/Nombre:</label>
+                            <input type="text" id="skuBusqueda" placeholder="Ej. RES-005 o parte del nombre" style="flex-grow: 1;">
+                            <button onclick="buscarProductosParaEdicion()" class="btn-crud" style="padding: 10px 15px;">Buscar</button>
                         </div>
 
-                        <div class="modal-actions">
-                            <button type="button" onclick="cerrarModal()" class="btn-cancelar">Cancelar</button>
-                            <button type="submit" class="btn-guardar">Guardar Producto</button>
+                        <div id="resultadosBusqueda" style="margin-top: 15px; max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 5px;">
+                            <p>Ingresa un SKU o nombre para buscar.</p>
                         </div>
-                    </form>
+
+                        <hr>
+                        <button onclick="prepararFormularioNuevo()" class="btn-crud btn-crear" style="width: 100%;">➕ Crear Nuevo Producto</button>
+                    </div>
+
+                    <div id="seccionFormularioEdicion" style="display: none;">
+
+                        <h3 id="tituloFormulario">Título Dinámico</h3>
+
+                        <form id="formNuevoProducto" onsubmit="guardarProducto(event)">
+                            <input type="hidden" name="idCarne" id="idCarne">
+
+                            <div class="form-grid">
+                                <div class="campo">
+                                    <label>Nombre del Producto:</label>
+                                    <input type="text" name="nombre" required placeholder="Ej. Costilla Cargada">
+                                </div>
+
+                                <div class="campo">
+                                    <label>Código SKU:</label>
+                                    <input type="text" name="sku" required placeholder="Ej. RES-005">
+                                </div>
+
+                                <div class="campo">
+                                    <label>Categoría:</label>
+                                    <select name="categoriaId" required>
+                                        <option value="1">Res</option>
+                                        <option value="2">Pollo</option>
+                                        <option value="3">Pescado</option>
+                                        <option value="4">Cerdo</option>
+                                        <option value="5">Exótico</option>
+                                    </select>
+                                </div>
+
+                                <div class="campo">
+                                    <label>Precio ($):</label>
+                                    <input type="number" name="precio" step="0.01" min="0" required placeholder="0.00">
+                                </div>
+
+                                <div class="campo">
+                                    <label>Stock Inicial:</label>
+                                    <input type="number" name="stock" min="0" required placeholder="0">
+                                </div>
+
+                                <div class="campo-doble">
+                                    <div>
+                                        <label>Días Min:</label>
+                                        <input type="number" name="diasMin" min="1" value="3">
+                                    </div>
+                                    <div>
+                                        <label>Días Max:</label>
+                                        <input type="number" name="diasMax" min="1" value="5">
+                                    </div>
+                                </div>
+
+                                <div class="campo-full">
+                                    <label>Seleccionar Imagen:</label>
+                                    <select name="imagenUrl" required>
+                                        <option value="" disabled selected>-- Selecciona una opción --</option>
+                                        <option value="imgProductos/imgRes.jpg">Res</option>
+                                        <option value="imgProductos/imgCerdo.jpg">Cerdo</option>
+                                        <option value="imgProductos/imgPolleria.jpg">Pollo</option>
+                                        <option value="imgProductos/imgPescaderia.jpg">Pescado</option>
+                                        <option value="imgProductos/imgExotico.jpg">Exótico</option>
+                                    </select>
+                                </div>
+
+                                <div class="campo-full">
+                                    <label>Descripción:</label>
+                                    <textarea name="descripcion" rows="3" placeholder="Detalles del corte..."></textarea>
+                                </div>
+                            </div>
+
+                            <div class="modal-actions">
+                                <button type="button" onclick="volverASeleccion()" class="btn-cancelar">Volver</button> 
+                                <button type="submit" class="btn-guardar">Guardar Producto</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </div>
-        </div>
         
         <!-- MODAL DETALLE PRODUCTO -->
         <div id="modalDetalle" class="modal-overlay">
@@ -342,43 +362,41 @@
             }
 
             function guardarProducto(event) {
-                event.preventDefault(); // Evita que la página se recargue
-                console.log("Iniciando envío de datos...");
-
-                // 1. Capturar el formulario
-                // 'event.target' es el formulario mismo si llamaste la función desde onsubmit
+                event.preventDefault(); 
                 const formulario = event.target;
-
-                // 2. Extraer los datos automáticamente
-                // FormData busca todos los inputs que tengan el atributo 'name'
                 const datos = new FormData(formulario);
 
-                // 3. Enviar los datos al Servlet
-                // IMPORTANTE: Cambia 'SvProducto' por la URL exacta de tu Servlet (la que pusiste en @WebServlet)
+                // Si 'productoEditandoId' tiene un valor, significa que estamos EDITANDO (PUT).
+                const metodoHttp = productoEditandoId ? 'PUT' : 'POST';
+
+                console.log(`Iniciando envío de datos con método: ${metodoHttp}...`);
+
                 fetch('SvProducto', {
-                    method: 'POST',
-                    // Usamos URLSearchParams para que Java lo lea fácil con request.getParameter()
+                    method: metodoHttp,
                     body: new URLSearchParams(datos)
                 })
-                        .then(response => {
-                            if (response.ok) {
-                                // Si el servidor responde con código 200 (OK)
-                                alert("¡Producto guardado exitosamente!");
-                                formulario.reset(); // Limpia los campos
+                    .then(response => {
+                        if (response.ok) {
+                            const mensaje = productoEditandoId ? "¡Producto actualizado exitosamente!" : "¡Producto guardado exitosamente!";
+                            alert(mensaje);
 
-                                // Si tienes una función para cerrar el modal, úsala aquí:
-                                // cerrarModal(); 
-
-                                // Si tienes una función para actualizar la tabla de productos sin recargar:
-                                // actualizarTabla();
+                            // Actualizar la lista visible y volver al menú o a la selección
+                            cargarProductos(); 
+                            if (productoEditandoId) {
+                                volverASeleccion(); // Vuelve a la lista de búsqueda para otra edición
                             } else {
-                                alert("Hubo un error al guardar el producto.");
+                                volverAlMenuPrincipal(); // Vuelve al menú principal si era una creación
                             }
-                        })
-                        .catch(error => {
-                            console.error("Error de conexión:", error);
-                            alert("No se pudo conectar con el servidor.");
-                        });
+                        } else {
+                            response.text().then(text => {
+                                alert(`Hubo un error al procesar el producto: ${text}`);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error de conexión:", error);
+                        alert("No se pudo conectar con el servidor.");
+                    });
             }
             function buscarProducto(event) {
                 event.preventDefault(); // Evita que recargue la página
@@ -396,7 +414,7 @@
 
                 renderizarProductos(filtrados);
             }
-
+            
             // --- FUNCIONES PARA ELIMINAR ---
 
             function activarModoBorrar() {
@@ -450,6 +468,198 @@
                 }
             }
 
+            // =================================================================
+            // 1. CONTROL DE VISTAS Y BOTONES
+            // =================================================================
+            let productoEditandoId = null;
+            // Abrir Modal: Siempre muestra primero el MENÚ y oculta la vista de edición/formulario
+            function abrirModal() {
+                document.getElementById("vistaMenu").style.display = "block";
+                document.getElementById("vistaFormulario").style.display = "none";
+                document.getElementById("modalProducto").style.display = "flex";
+            }
+
+            function cerrarModal() {
+                document.getElementById("modalProducto").style.display = "none";
+            }
+
+            window.onclick = function (event) {
+                const modal = document.getElementById("modalProducto");
+                if (event.target == modal) {
+                    cerrarModal();
+                }
+            }
+
+            // ----------------------------------------------------
+            // Transiciones dentro del Modal de Administración
+            // ----------------------------------------------------
+
+            // 1. Ir a la vista de CREACIÓN (Desde vistaMenu)
+            function mostrarFormulario() {
+                prepararFormularioNuevo();
+                document.getElementById("vistaMenu").style.display = "none";
+                document.getElementById("vistaFormulario").style.display = "block";
+            }
+
+            // 2. Ir a la vista de EDICIÓN (Desde vistaMenu, mostrando la búsqueda)
+            function seleccionarProductoParaEdicion() {
+                document.getElementById("vistaMenu").style.display = "none";
+                document.getElementById("vistaFormulario").style.display = "block"; // Mostrar el contenedor principal
+
+                // Mostrar la sección de búsqueda/selección
+                document.getElementById("seccionSeleccion").style.display = "block";
+
+                // Ocultar el formulario de edición
+                document.getElementById("seccionFormularioEdicion").style.display = "none";
+
+                // Limpiar campos de búsqueda
+                document.getElementById("skuBusqueda").value = "";
+                document.getElementById("resultadosBusqueda").innerHTML = "<p>Ingresa un SKU o nombre para buscar.</p>";
+                productoEditandoId = null; 
+            }
+
+            // 3. Preparar la interfaz para CREAR un producto (limpiar campos)
+            function prepararFormularioNuevo() {
+                const formulario = document.getElementById("formNuevoProducto");
+
+                // Títulos y Vistas
+                document.getElementById("tituloFormulario").textContent = "➕ Nuevo Producto Cárnico";
+                document.getElementById("seccionSeleccion").style.display = "none";
+                document.getElementById("seccionFormularioEdicion").style.display = "block";
+
+                // Limpiar y resetear el estado
+                formulario.reset();
+                document.getElementById("idCarne").value = "";
+                productoEditandoId = null;
+                document.querySelector("#seccionFormularioEdicion .btn-guardar").textContent = "Guardar Producto";
+                document.querySelector("#seccionFormularioEdicion .btn-cancelar").textContent = "Cancelar";
+                document.querySelector("#seccionFormularioEdicion .btn-cancelar").onclick = cerrarModal; // Al crear, el botón "Volver" debe cerrar el modal
+            }
+
+            // 4. Volver a la lista de búsqueda (Desde el formulario de Edición)
+            function volverASeleccion() {
+                if (productoEditandoId) {
+                    // Si estábamos editando, volvemos a la vista de selección/búsqueda
+                    seleccionarProductoParaEdicion();
+                } else {
+                    // Si estábamos creando, volvemos al menú principal del modal
+                    volverAlMenuPrincipal();
+                }
+            }
+
+            // 5. Regresar al Menú principal (Desde cualquier sub-vista del modal)
+            function volverAlMenuPrincipal() {
+                document.getElementById("vistaFormulario").style.display = "none";
+                document.getElementById("vistaMenu").style.display = "block";
+            }
+
+
+            // =================================================================
+            // 2. LÓGICA DE BÚSQUEDA Y CARGA (EDITAR)
+            // =================================================================
+
+            /**
+             * Llama al Servlet para buscar productos por SKU o nombre y muestra los resultados.
+             */
+            function buscarProductosParaEdicion() {
+                const filtro = document.getElementById("skuBusqueda").value.trim();
+                const resultadosDiv = document.getElementById("resultadosBusqueda");
+
+                if (filtro.length < 2) {
+                    resultadosDiv.innerHTML = "<p>Ingresa al menos 2 caracteres para buscar.</p>";
+                    return;
+                }
+
+                resultadosDiv.innerHTML = "<p>Buscando productos...</p>";
+
+                // Llamamos al doGet de SvProducto con el filtro de búsqueda
+                fetch(`SvProducto?buscar=${encodeURIComponent(filtro)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        // Si el servidor devuelve un error, lo manejamos
+                        throw new Error("Error al obtener la lista de productos: " + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(listaProductos => {
+                    if (listaProductos.length === 0) {
+                        resultadosDiv.innerHTML = "<p>No se encontraron productos que coincidan.</p>";
+                        return;
+                    }
+
+                    let html = "<ul style='list-style: none; padding: 0;'>";
+                    listaProductos.forEach(prod => {
+                        html += `
+                            <li style="border: 1px solid #ccc; padding: 10px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px; font-size: 14px;">
+                                <span>
+                                    <strong style="color: #007bff;">${prod.codigoSku}</strong>: ${prod.nombre} ($${prod.precio})
+                                </span>
+                                <button onclick='cargarProductoParaEdicion(${prod.idCarne})' class="btn-crud btn-editar" style="padding: 5px 10px; margin: 0; font-size: 12px;">Seleccionar</button>
+                            </li>
+                        `;
+                    });
+                    html += "</ul>";
+                    resultadosDiv.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error("Error en la búsqueda:", error);
+                    resultadosDiv.innerHTML = `<p style="color: red;">Error en el servidor: ${error.message}</p>`;
+                });
+            }
+
+            /**
+             * Llama al Servlet para obtener el detalle de un producto y carga el formulario.
+             * @param {number} idCarne - El ID del producto a cargar.
+             */
+            function cargarProductoParaEdicion(idCarne) {
+                // 1. Ocultamos el menú de selección y mostramos el formulario
+                document.getElementById("seccionSeleccion").style.display = "none";
+                document.getElementById("seccionFormularioEdicion").style.display = "block";
+
+                // 2. Traemos los datos (asumiendo que SvProducto?id=... devuelve el JSON del producto)
+                fetch(`SvProducto?id=${idCarne}`)  
+                .then(response => {
+                    if (!response.ok) throw new Error("Producto no encontrado o error en el servidor.");
+                    return response.json();
+                })
+                .then(productoAEditar => {
+                    const formulario = document.getElementById("formNuevoProducto");
+                    document.getElementById("tituloFormulario").textContent = `✏️ Editando: ${productoAEditar.nombre}`;
+
+                    // 3. Establecer estado de Edición
+                    productoEditandoId = productoAEditar.idCarne;
+                    document.querySelector("#seccionFormularioEdicion .btn-guardar").textContent = "Guardar Cambios";
+                    document.querySelector("#seccionFormularioEdicion .btn-cancelar").textContent = "Volver a Selección";
+                    document.querySelector("#seccionFormularioEdicion .btn-cancelar").onclick = volverASeleccion;
+
+                    // 4. Llenar los campos del formulario
+                    formulario.elements["idCarne"].value = productoAEditar.idCarne;
+                    formulario.elements["nombre"].value = productoAEditar.nombre;
+                    formulario.elements["sku"].value = productoAEditar.codigoSku;
+
+                    // Si la categoría viene como objeto, necesitamos su ID
+                    const categoriaId = productoAEditar.categoria ? productoAEditar.categoria.id : '';
+                    formulario.elements["categoriaId"].value = categoriaId; 
+
+                    // Asegurar que el precio tenga 2 decimales si el campo es de tipo number
+                    const precioFormateado = parseFloat(productoAEditar.precio).toFixed(2);
+                    formulario.elements["precio"].value = precioFormateado;
+
+                    formulario.elements["stock"].value = productoAEditar.stockActual;
+                    formulario.elements["diasMin"].value = productoAEditar.diasEntregaMin;
+                    formulario.elements["diasMax"].value = productoAEditar.diasEntregaMax;
+                    formulario.elements["descripcion"].value = productoAEditar.descripcion || ''; // Completar descripción
+
+                    // Seleccionar la URL de la imagen (debe coincidir con las opciones)
+                    formulario.elements["imagenUrl"].value = productoAEditar.imagenUrl || '';
+
+                })
+                .catch(error => {
+                     console.error("Error cargando producto para edición:", error);
+                     alert(`Error al cargar el producto: ${error.message}`);
+                     seleccionarProductoParaEdicion(); // Regresa a la vista de selección si falla
+                });
+            }
         </script>
     </body>
 </html>
