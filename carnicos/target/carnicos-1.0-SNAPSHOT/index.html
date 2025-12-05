@@ -191,6 +191,17 @@
                 </div>
             </div>
         </div>
+        
+        <!-- MODAL DETALLE PRODUCTO -->
+        <div id="modalDetalle" class="modal-overlay">
+            <div class="modal-detalle-content">
+                <span class="cerrar-detalle" onclick="cerrarModalDetalle()">&times;</span>
+
+                <div id="detalleContenido">
+                    <!-- El contenido se genera dinámicamente con JS -->
+                </div>
+            </div>
+        </div>
 
         <script>
             let todosLosProductos = [];
@@ -222,6 +233,12 @@
                 lista.forEach(c => {
                     const item = document.createElement("div");
                     item.classList.add("item");
+                    item.style.cursor = 'pointer'; //--- Indicar que es clickeable
+                    item.addEventListener('click', () => {
+                        // Evita que se active si se hizo clic en el botón '+'
+                        if (event.target.classList.contains('btn-agregar')) return;
+                        mostrarDetalle(c);
+                    });
                     const imagenFinal = c.imagenUrl ? c.imagenUrl : 'imgProductos/default.jpg';
                     const textoEntrega = (c.diasEntregaMin && c.diasEntregaMax)
                             ? `${c.diasEntregaMin}-${c.diasEntregaMax} días`
@@ -260,6 +277,37 @@
                     renderizarProductos(filtrados);
                 }
             }
+            
+            // --- Modal de Datos ---
+            function mostrarDetalle(producto) {
+                const modal = document.getElementById("modalDetalle");
+                const cont = document.getElementById("detalleContenido");
+                cont.innerHTML = `
+                    <div class="detalle-header">
+                        <h2>${producto.nombre}</h2>
+                    </div>
+                    <img src="${producto.imagenUrl}" alt="${producto.nombre}">
+                    <div class="detalle-info">
+                        <p><strong>Descripción:</strong> ${producto.descripcion || "Sin descripción"}</p>
+                        <p><strong>SKU:</strong> ${producto.codigoSku || "N/A"}</p>
+                        <p><strong>Categoría:</strong> ${producto.categoria?.nombre || "General"}</p>
+                        <p><strong>Stock Disponible:</strong> ${producto.stockActual}</p>
+                        <p><strong>Días de entrega:</strong> ${producto.diasEntregaMin}-${producto.diasEntregaMax} días</p>
+                    </div>
+                    <div class="detalle-fin">
+                        <span class="detalle-precio">$${producto.precio}</span>
+                        <button class="btn-comprar" onclick="alert('Agregaste: ${producto.nombre} al carrito')">+</button>
+                    </div>
+                `;
+                modal.style.display = "flex";
+            }
+            function cerrarModalDetalle() {
+                document.getElementById("modalDetalle").style.display = "none";
+            }
+            window.addEventListener("click", (event) => {
+                const modal = document.getElementById("modalDetalle");
+                if (event.target === modal) cerrarModalDetalle();
+            });
 
             // --- LOGICA MODIFICADA PARA EL MODAL ---
 
