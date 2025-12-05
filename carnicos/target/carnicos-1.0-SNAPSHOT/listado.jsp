@@ -16,11 +16,11 @@
                 for (Carne c : carnes) {
         %>
             <div class="carne">
-                <img src="<%= c.getImagen_url() %>" alt="<%= c.getNombre() %>" width="150">
+                <img src="<%= c.getImagenUrl() %>" alt="<%= c.getNombre() %>" width="150">
                 <h3><%= c.getNombre() %></h3>
                 <p><%= c.getDescripcion() %></p>
                 <p><b>Precio:</b> $<%= c.getPrecio() %></p>
-                <p><b>Clasificación:</b> <%= c.getClasificacion() %></p>
+                <p><b>Clasificación:</b> <%= c.getCategoria().getNombre() %></p>
             </div>
         <%
                 }

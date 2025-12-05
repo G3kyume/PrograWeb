@@ -9,26 +9,26 @@ public class CarneDAO {
 
     // SQL CONSTANTE: Lo definimos aquí para no repetirlo.
     // NOTA EL JOIN: Unimos productos (p) con categorias (c) para traer el nombre de la categoría.
-    private static final String SELECT_BASE = 
-        "SELECT p.id, p.nombre, p.descripcion, p.precio, p.stock_actual, " +
-        "       p.imagen_url, p.dias_entrega_min, p.dias_entrega_max, p.codigo_sku, " +
-        "       c.id AS id_categoria, c.nombre AS nombre_categoria " +
-        "FROM productos_carnicos p " +
-        "JOIN categorias c ON p.categoria_id = c.id ";
+    private static final String SELECT_BASE
+            = "SELECT p.id, p.nombre, p.descripcion, p.precio, p.stock_actual, "
+            + "       p.imagen_url, p.dias_entrega_min, p.dias_entrega_max, p.codigo_sku, "
+            + "       c.id AS id_categoria, c.nombre AS nombre_categoria "
+            + "FROM productos_carnicos p "
+            + "JOIN categorias c ON p.categoria_id = c.id ";
 
     /**
      * Helper: Mapea un ResultSet a un objeto Carne actualizado.
      */
     private Carne mapearCarne(ResultSet rs) throws SQLException {
         Carne c = new Carne();
-        
+
         // 1. Datos Básicos
         c.setId(rs.getInt("id"));
         c.setNombre(rs.getString("nombre"));
         c.setDescripcion(rs.getString("descripcion"));
         c.setPrecio(rs.getBigDecimal("precio"));
         c.setCodigoSku(rs.getString("codigo_sku"));
-        
+
         // 2. Datos actualizados (Nuevos nombres de columna)
         c.setStockActual(rs.getInt("stock_actual"));
         c.setDiasEntregaMin(rs.getInt("dias_entrega_min"));
@@ -47,7 +47,7 @@ public class CarneDAO {
         } else {
             c.setImagenUrl(imagen);
         }
-        
+
         return c;
     }
 
@@ -67,18 +67,32 @@ public class CarneDAO {
         String sql = SELECT_BASE + "WHERE c.nombre = ? ORDER BY p.id ASC;";
         return ejecutarConsulta(sql, nombreCategoria);
     }
-    
-    
+
+    // --------------------------------------------------------------------------
+    // 3. Método para buscar por NOMBRE (LIKE %texto%)
+    // --------------------------------------------------------------------------
+    public List<Carne> buscarPorNombre(String nombre) {
+        String sql = SELECT_BASE
+                + "WHERE LOWER(p.nombre) LIKE LOWER(?) "
+                + "ORDER BY p.id ASC;";
+
+        return ejecutarConsulta(sql, "%" + nombre + "%");
+    }
+
+    // Método compatibilidad: listar() llama a obtenerCarnes()
+    public List<Carne> listar() {
+        return obtenerCarnes();
+    }
+
     // --------------------------------------------------------------------------
     // 4. Método para INSERTAR un producto nuevo
     // --------------------------------------------------------------------------
     public boolean insertarCarne(Carne c) {
-        String sql = "INSERT INTO productos_carnicos " +
-                     "(nombre, descripcion, precio, stock_actual, imagen_url, dias_entrega_min, dias_entrega_max, categoria_id, codigo_sku) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO productos_carnicos "
+                + "(nombre, descripcion, precio, stock_actual, imagen_url, dias_entrega_min, dias_entrega_max, categoria_id, codigo_sku) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = ConexionPostgres.getConexion();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = ConexionPostgres.getConexion(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, c.getNombre());
             ps.setString(2, c.getDescripcion());
@@ -106,22 +120,20 @@ public class CarneDAO {
             return false;
         }
     }
-    
 
     // --------------------------------------------------------------------------
     // 3. Método general de ejecución
     // --------------------------------------------------------------------------
     private List<Carne> ejecutarConsulta(String sql, String parametro) {
         List<Carne> lista = new ArrayList<>();
-        
-        try (Connection conn = ConexionPostgres.getConexion();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+        try (Connection conn = ConexionPostgres.getConexion(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
             // Si hay parámetro (filtro), lo asignamos
             if (parametro != null) {
                 ps.setString(1, parametro);
             }
-            
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lista.add(mapearCarne(rs));

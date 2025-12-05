@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.List;
 
 @WebServlet(name = "SvProducto", urlPatterns = {"/SvProducto"})
 public class SvProducto extends HttpServlet {
@@ -17,9 +18,32 @@ public class SvProducto extends HttpServlet {
     // 1. Instanciamos el DAO aquí
     private CarneDAO carneDAO = new CarneDAO();
 
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        // Recibir parámetro de búsqueda desde index.html
+        String filtro = request.getParameter("buscar");
+
+        CarneDAO dao = new CarneDAO();
+        List<Carne> lista;
+
+        if (filtro != null && !filtro.trim().isEmpty()) {
+            // Si sí escribieron algo → búsqueda filtrada
+            lista = dao.buscarPorNombre(filtro);
+        } else {
+            // Si está vacío → listar todo
+            lista = dao.listar();
+        }
+
+        // Enviar a listado.jsp
+        request.setAttribute("productos", lista);
+        request.getRequestDispatcher("listado.jsp").forward(request, response);
+    }
+
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         // A. Recibir datos del formulario (vienen del fetch)
         String nombre = request.getParameter("nombre");
         String descripcion = request.getParameter("descripcion");
@@ -49,7 +73,7 @@ public class SvProducto extends HttpServlet {
         nuevaCarne.setDiasEntregaMin(diasMin);
         nuevaCarne.setDiasEntregaMax(diasMax);
         nuevaCarne.setCodigoSku(sku);
-        
+
         // Crear una categoría "falsa" solo con el ID para cumplir con el objeto
         Categoria cat = new Categoria();
         cat.setId(idCategoria);
