@@ -4,6 +4,7 @@ import com.carnicos.model.Carne;
 import com.carnicos.model.CarneDAO;
 import com.carnicos.model.Categoria;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
@@ -14,6 +15,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @WebServlet(name = "SvProducto", urlPatterns = {"/SvProducto"})
 public class SvProducto extends HttpServlet {
@@ -28,12 +30,6 @@ public class SvProducto extends HttpServlet {
         CarneDAO carneDAO = new CarneDAO(); // Asumiendo que esta línea o la inicialización está arriba.
     
         // 1. BÚSQUEDA POR ID (obtenerUnoYenviarJson debe hacer todo el trabajo)
-        String idCarneStr = request.getParameter("id");
-        if (idCarneStr != null && !idCarneStr.trim().isEmpty()) {
-            // Asumiendo que este método existe y maneja la respuesta JSON/Error.
-            obtenerUnoYenviarJson(request, response);
-            return; // Termina la ejecución aquí
-        }
         if (request.getParameter("id") != null && !request.getParameter("id").trim().isEmpty()) {
             obtenerUnoYenviarJson(request, response);
             return; // Termina la ejecución aquí
@@ -116,7 +112,7 @@ public class SvProducto extends HttpServlet {
                                 : "null";
                                 
         return "{"  
-            + "\"idCarne\":" + carne.getId() + ","
+            + "\"id\":" + carne.getId() + ","
             + "\"nombre\":\"" + carne.getNombre() + "\","
             + "\"descripcion\":\"" + (carne.getDescripcion() != null ? carne.getDescripcion().replace("\n", "\\n") : "") + "\","
             + "\"precio\":" + carne.getPrecio() + ","
@@ -143,90 +139,92 @@ public class SvProducto extends HttpServlet {
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+        throws ServletException, IOException {
 
-        // A. Recibir datos del formulario (vienen del fetch)
-        String nombre = request.getParameter("nombre");
-        String descripcion = request.getParameter("descripcion");
-        String precioStr = request.getParameter("precio");
-        String stockStr = request.getParameter("stock");
-        String imagenUrl = request.getParameter("imagenUrl");
-        String diasMinStr = request.getParameter("diasMin"); // Asegúrate de tener este input
-        String diasMaxStr = request.getParameter("diasMax"); // Asegúrate de tener este input
-        String sku = request.getParameter("sku");            // Asegúrate de tener este input
-        String idCategoriaStr = request.getParameter("categoriaId"); // Input oculto o select
+        try {
+            // 1. Leer el JSON enviado por fetch
+            String cuerpoJson = request.getReader().lines().collect(Collectors.joining());
+            System.out.println("POST JSON recibido: " + cuerpoJson);
 
-        // B. Convertir datos (Strings a números)
-        // Nota: Deberías usar try-catch aquí por si mandan texto vacío, pero para el ejemplo:
-        BigDecimal precio = new BigDecimal(precioStr);
-        int stock = Integer.parseInt(stockStr);
-        int diasMin = Integer.parseInt(diasMinStr);
-        int diasMax = Integer.parseInt(diasMaxStr);
-        int idCategoria = Integer.parseInt(idCategoriaStr);
+            // 2. Convertir JSON -> objeto JSON
+            Gson gson = new Gson();
+            JsonObject json = gson.fromJson(cuerpoJson, JsonObject.class);
 
-        // C. Crear el objeto Carne
-        Carne nuevaCarne = new Carne();
-        nuevaCarne.setNombre(nombre);
-        nuevaCarne.setDescripcion(descripcion);
-        nuevaCarne.setPrecio(precio);
-        nuevaCarne.setStockActual(stock);
-        nuevaCarne.setImagenUrl(imagenUrl);
-        nuevaCarne.setDiasEntregaMin(diasMin);
-        nuevaCarne.setDiasEntregaMax(diasMax);
-        nuevaCarne.setCodigoSku(sku);
+            // 3. Extraer campos del JSON
+            String nombre = json.get("nombre").getAsString();
+            String descripcion = json.get("descripcion").getAsString();
+            BigDecimal precio = new BigDecimal(json.get("precio").getAsString());
+            int stock = json.get("stock").getAsInt();
+            String imagenUrl = json.get("imagenUrl").getAsString();
+            int diasMin = json.get("diasMin").getAsInt();
+            int diasMax = json.get("diasMax").getAsInt();
+            String sku = json.get("sku").getAsString();
+            int idCategoria = json.get("categoriaId").getAsInt();
 
-        // Crear una categoría "falsa" solo con el ID para cumplir con el objeto
-        Categoria cat = new Categoria();
-        cat.setId(idCategoria);
-        nuevaCarne.setCategoria(cat);
+            // 4. Crear objeto Carne
+            Carne nuevaCarne = new Carne();
+            nuevaCarne.setNombre(nombre);
+            nuevaCarne.setDescripcion(descripcion);
+            nuevaCarne.setPrecio(precio);
+            nuevaCarne.setStockActual(stock);
+            nuevaCarne.setImagenUrl(imagenUrl);
+            nuevaCarne.setDiasEntregaMin(diasMin);
+            nuevaCarne.setDiasEntregaMax(diasMax);
+            nuevaCarne.setCodigoSku(sku);
 
-        // D. USAR TU DAO (Aquí es donde se usa tu código)
-        boolean exito = carneDAO.insertarCarne(nuevaCarne);
+            Categoria cat = new Categoria();
+            cat.setId(idCategoria);
+            nuevaCarne.setCategoria(cat);
 
-        // E. Responder al Javascript
-        if (exito) {
-            response.setStatus(HttpServletResponse.SC_OK); // 200 OK
-        } else {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // 500 Error
+            // 5. Guardar en BD
+            boolean exito = carneDAO.insertarCarne(nuevaCarne);
+
+            if (exito) {
+                response.setStatus(HttpServletResponse.SC_OK);
+            } else {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error al insertar producto");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Error procesando JSON en POST.");
         }
     }
     
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        
-        // Lógica para ACTUALIZAR (EDITAR) un producto
+        throws ServletException, IOException {
         try {
-            // Recibimos todos los datos, incluyendo el ID
-            String idCarneStr = request.getParameter("idCarne"); // Viene del input hidden
-            
-            if (idCarneStr == null || idCarneStr.isEmpty()) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID de producto es requerido para la edición (PUT).");
+            // 1. Leer JSON
+            String cuerpoJson = request.getReader().lines().collect(Collectors.joining());
+            System.out.println("PUT JSON recibido: " + cuerpoJson);
+
+            // 2. Interpretar JSON
+            Gson gson = new Gson();
+            JsonObject json = gson.fromJson(cuerpoJson, JsonObject.class);
+
+            // 3. Validar ID
+            if (!json.has("id")) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "El ID es obligatorio para PUT.");
                 return;
             }
-            
-            // Reutilizamos la lógica del doPost para la recolección de datos
-            int idCarne = Integer.parseInt(idCarneStr);
-            String nombre = request.getParameter("nombre");
-            String descripcion = request.getParameter("descripcion");
-            String precioStr = request.getParameter("precio");
-            String stockStr = request.getParameter("stock");
-            String imagenUrl = request.getParameter("imagenUrl");
-            String diasMinStr = request.getParameter("diasMin");
-            String diasMaxStr = request.getParameter("diasMax");
-            String sku = request.getParameter("sku");
-            String idCategoriaStr = request.getParameter("categoriaId");
 
-            // Conversión de datos
-            BigDecimal precio = new BigDecimal(precioStr);
-            int stock = Integer.parseInt(stockStr);
-            int diasMin = Integer.parseInt(diasMinStr);
-            int diasMax = Integer.parseInt(diasMaxStr);
-            int idCategoria = Integer.parseInt(idCategoriaStr);
+            int id = json.get("id").getAsInt();
 
-            // Crear el objeto Carne (usando el ID)
+            // 4. Extraer datos
+            String nombre = json.get("nombre").getAsString();
+            String descripcion = json.get("descripcion").getAsString();
+            BigDecimal precio = new BigDecimal(json.get("precio").getAsString());
+            int stock = json.get("stock").getAsInt();
+            String imagenUrl = json.get("imagenUrl").getAsString();
+            int diasMin = json.get("diasMin").getAsInt();
+            int diasMax = json.get("diasMax").getAsInt();
+            String sku = json.get("sku").getAsString();
+            int idCategoria = json.get("categoriaId").getAsInt();
+
+            // 5. Crear objeto actualizado
             Carne carneAEditar = new Carne();
-            carneAEditar.setId(idCarne);
+            carneAEditar.setId(id);
             carneAEditar.setNombre(nombre);
             carneAEditar.setDescripcion(descripcion);
             carneAEditar.setPrecio(precio);
@@ -240,21 +238,19 @@ public class SvProducto extends HttpServlet {
             cat.setId(idCategoria);
             carneAEditar.setCategoria(cat);
 
-            // D. USAR TU DAO para ACTUALIZAR
-            boolean exito = carneDAO.actualizarCarne(carneAEditar); // Asumiendo que tienes este método en tu DAO
+            // 6. Actualizar BD
+            boolean exito = carneDAO.actualizarCarne(carneAEditar);
 
-            // E. Responder al Javascript
             if (exito) {
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().write("Producto actualizado correctamente.");
             } else {
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Fallo al actualizar el producto.");
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "No se pudo actualizar.");
             }
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Error de formato en un campo numérico: " + e.getMessage());
+
         } catch (Exception e) {
-            System.err.println("Error en doPut: " + e.getMessage());
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error interno del servidor durante la actualización.");
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Error procesando JSON en PUT.");
         }
     }
 }

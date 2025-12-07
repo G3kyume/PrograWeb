@@ -137,8 +137,7 @@
                         <h3 id="tituloFormulario">Título Dinámico</h3>
 
                         <form id="formNuevoProducto" onsubmit="guardarProducto(event)">
-                            <input type="hidden" name="idCarne" id="idCarne">
-
+                            <input type="hidden" name="id" id="id">
                             <div class="form-grid">
                                 <div class="campo">
                                     <label>Nombre del Producto:</label>
@@ -207,6 +206,8 @@
                         </form>
                     </div>
                 </div>
+            </div>
+        </div>
         
         <!-- MODAL DETALLE PRODUCTO -->
         <div id="modalDetalle" class="modal-overlay">
@@ -362,41 +363,58 @@
             }
 
             function guardarProducto(event) {
-                event.preventDefault(); 
-                const formulario = event.target;
+                event.preventDefault();
+
+                const formulario = document.getElementById("formNuevoProducto");
                 const datos = new FormData(formulario);
 
-                // Si 'productoEditandoId' tiene un valor, significa que estamos EDITANDO (PUT).
-                const metodoHttp = productoEditandoId ? 'PUT' : 'POST';
+                // Convertimos FormData a un objeto normal
+                const objetoDatos = Object.fromEntries(datos.entries());
 
-                console.log(`Iniciando envío de datos con método: ${metodoHttp}...`);
+                // Mostramos lo que se enviará
+                alert("Enviando JSON:\n" + JSON.stringify(objetoDatos, null, 2));
 
-                fetch('SvProducto', {
+                // Saber si es POST (crear) o PUT (editar)
+                const metodoHttp = productoEditandoId ? "PUT" : "POST";
+
+                fetch("SvProducto", {
                     method: metodoHttp,
-                    body: new URLSearchParams(datos)
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(objetoDatos)
                 })
-                    .then(response => {
-                        if (response.ok) {
-                            const mensaje = productoEditandoId ? "¡Producto actualizado exitosamente!" : "¡Producto guardado exitosamente!";
-                            alert(mensaje);
+                .then(response => {
+                    if (response.ok) {
+                        const mensaje = productoEditandoId
+                            ? "¡Producto actualizado exitosamente!"
+                            : "¡Producto guardado exitosamente!";
+                        alert(mensaje);
 
-                            // Actualizar la lista visible y volver al menú o a la selección
-                            cargarProductos(); 
-                            if (productoEditandoId) {
-                                volverASeleccion(); // Vuelve a la lista de búsqueda para otra edición
-                            } else {
-                                volverAlMenuPrincipal(); // Vuelve al menú principal si era una creación
-                            }
+                        cargarProductos();
+
+                        if (productoEditandoId) {
+                            volverASeleccion();
                         } else {
-                            response.text().then(text => {
-                                alert(`Hubo un error al procesar el producto: ${text}`);
-                            });
+                            volverAlMenuPrincipal();
                         }
-                    })
-                    .catch(error => {
-                        console.error("Error de conexión:", error);
-                        alert("No se pudo conectar con el servidor.");
-                    });
+                    } else {
+                        response.text().then(text => {
+                            alert("Error al procesar el producto:\n" + text);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Error de conexión con el servidor.");
+                });
+            }
+            function mostrarFormData(fd) {
+                let texto = "Datos enviados:\n\n";
+                for (let [key, value] of fd.entries()) {
+                    texto += `${key}: ${value}\n`;
+                }
+                alert(texto);
             }
             function buscarProducto(event) {
                 event.preventDefault(); // Evita que recargue la página
@@ -529,7 +547,7 @@
 
                 // Limpiar y resetear el estado
                 formulario.reset();
-                document.getElementById("idCarne").value = "";
+                document.getElementById("id").value = "";
                 productoEditandoId = null;
                 document.querySelector("#seccionFormularioEdicion .btn-guardar").textContent = "Guardar Producto";
                 document.querySelector("#seccionFormularioEdicion .btn-cancelar").textContent = "Cancelar";
@@ -564,7 +582,7 @@
             function buscarProductosParaEdicion() {
                 const filtro = document.getElementById("skuBusqueda").value.trim();
                 const resultadosDiv = document.getElementById("resultadosBusqueda");
-
+                
                 if (filtro.length < 2) {
                     resultadosDiv.innerHTML = "<p>Ingresa al menos 2 caracteres para buscar.</p>";
                     return;
@@ -594,7 +612,7 @@
                                 <span>
                                     <strong style="color: #007bff;">${prod.codigoSku}</strong>: ${prod.nombre} ($${prod.precio})
                                 </span>
-                                <button onclick='cargarProductoParaEdicion(${prod.idCarne})' class="btn-crud btn-editar" style="padding: 5px 10px; margin: 0; font-size: 12px;">Seleccionar</button>
+                                <button onclick='cargarProductoParaEdicion(${prod.id})' class="btn-crud btn-editar" style="padding: 5px 10px; margin: 0; font-size: 12px;">Seleccionar</button>
                             </li>
                         `;
                     });
@@ -609,15 +627,15 @@
 
             /**
              * Llama al Servlet para obtener el detalle de un producto y carga el formulario.
-             * @param {number} idCarne - El ID del producto a cargar.
+             * @param {number} id - El ID del producto a cargar.
              */
-            function cargarProductoParaEdicion(idCarne) {
+            function cargarProductoParaEdicion(id) {
                 // 1. Ocultamos el menú de selección y mostramos el formulario
                 document.getElementById("seccionSeleccion").style.display = "none";
                 document.getElementById("seccionFormularioEdicion").style.display = "block";
 
                 // 2. Traemos los datos (asumiendo que SvProducto?id=... devuelve el JSON del producto)
-                fetch(`SvProducto?id=${idCarne}`)  
+                fetch(`SvProducto?id=${id}`)  
                 .then(response => {
                     if (!response.ok) throw new Error("Producto no encontrado o error en el servidor.");
                     return response.json();
@@ -627,13 +645,13 @@
                     document.getElementById("tituloFormulario").textContent = `✏️ Editando: ${productoAEditar.nombre}`;
 
                     // 3. Establecer estado de Edición
-                    productoEditandoId = productoAEditar.idCarne;
+                    productoEditandoId = productoAEditar.id;
                     document.querySelector("#seccionFormularioEdicion .btn-guardar").textContent = "Guardar Cambios";
                     document.querySelector("#seccionFormularioEdicion .btn-cancelar").textContent = "Volver a Selección";
                     document.querySelector("#seccionFormularioEdicion .btn-cancelar").onclick = volverASeleccion;
 
                     // 4. Llenar los campos del formulario
-                    formulario.elements["idCarne"].value = productoAEditar.idCarne;
+                    formulario.elements["id"].value = productoAEditar.id;
                     formulario.elements["nombre"].value = productoAEditar.nombre;
                     formulario.elements["sku"].value = productoAEditar.codigoSku;
 
